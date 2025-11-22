@@ -108,6 +108,11 @@ const ManageDue = () => {
             sortable: true
         },
         {
+            name: 'Category',
+            selector: row => row.category,
+            
+        },
+        {
             name: 'Status',
             selector: row => row.loan_status,
             sortable: true,

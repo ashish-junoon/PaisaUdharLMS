@@ -79,7 +79,7 @@ const CicReporting = () => {
                 if (response.status) {
                     setIsLoading(false);
                     // setReportData(formatKey(response.CICReports));
-                    const formattedReports = response.CICReports.map((item) => {
+                    const formattedReports = response.cicReports.map((item) => {
                         const formattedItem = {};
                         Object.entries(item).forEach(([key, value]) => {
                         formattedItem[formatKey(key)] = value;

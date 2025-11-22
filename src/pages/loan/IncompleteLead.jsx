@@ -108,6 +108,11 @@ const IncompleteLead = () => {
             width: '100px'
         },
         {
+            name: 'Lead Date',
+            selector: row => row.created_date,
+            width: '150px'
+        },
+        {
             name: 'Actions',
             cell: row => (
                 <button
