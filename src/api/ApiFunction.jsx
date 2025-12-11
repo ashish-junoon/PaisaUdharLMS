@@ -531,6 +531,17 @@ export const GetLoanDocuments = async (req) => {
     }
 }
 
+
+export const GetUpdateLoanEMI = async (req) => {
+    try {
+        const response = await api.post("/Product/GetEmiScheduleByDate_V1", req);
+        return response.data; // Return the API response data
+    } catch (error) {
+        console.error("Get Loan Documents error:", error.response?.data || error.message);
+        throw error; // Rethrow error to handle it in the calling function
+    }
+}
+
 //Get Agreement Letter
 export const GetAgreementLetter = async (req) => {
     try {

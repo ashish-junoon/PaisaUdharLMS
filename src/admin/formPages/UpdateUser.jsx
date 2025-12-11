@@ -66,6 +66,7 @@ function UpdateUser() {
                 department: empData.dept_id || "",
                 designation: empData.desi_id || "",
                 role: empData.role || "",
+                userAction: empData.is_active ? "True" : "False",
                 reportView: empData.is_report_status ? "True" : "False",
             });
             setFormInitialized(true);
@@ -86,6 +87,7 @@ function UpdateUser() {
             designation: "",
             role: "",
             reportView: "",
+            userAction:"",
         },
         enableReinitialize: true,
         validationSchema: Yup.object({
@@ -113,6 +115,7 @@ function UpdateUser() {
             designation: Yup.string().required("Designation is required"),
             role: Yup.string().required("Role is required"),
             reportView: Yup.string().required("Report view is required"),
+            userAction:Yup.string(),
         }),
         onSubmit: async (values) => {
             setIsLoading(true);
@@ -130,7 +133,7 @@ function UpdateUser() {
                 desi_id: values.designation,
                 role: values.role,
                 is_report_status: values.reportView === "True" ? true : false,
-                is_active: true
+                is_active: values.userAction === "True" ? true : false,
             }
 
             try {
@@ -349,13 +352,31 @@ function UpdateUser() {
                                 onChange={formik.handleChange}
                                 onBlur={formik.handleBlur}
                                 options={[
-                                    { value: "admin", label: "Admin" },
-                                    { value: "user", label: "User" },
+                                    { value: "Admin", label: "Admin" },
+                                    { value: "Others", label: "Others" },
+                                    { value: "Funder", label: "Funder" },
+                                    
                                 ]}
                             />
                             {renderError("role")}
                         </div>
-
+                        <div>
+                            <SelectInput
+                                label="User Active & Inactive"
+                                icon="RiUserSettingsLine"
+                                name="userAction"
+                                placeholder="Select"
+                                disabled={!isEditing}
+                                value={formik.values.userAction}
+                                onChange={formik.handleChange}
+                                onBlur={formik.handleBlur}
+                                options={[
+                                    { value: "True", label: "Active" },
+                                    { value: "False", label: "Inactive" },
+                                ]}
+                            />
+                            {renderError("userAction")}
+                        </div>
                         <div>
                             <SelectInput
                                 label="Report View"

@@ -55,7 +55,7 @@ const Employment = ({ btnEnable = false }) => {
             netSalary: Yup.string().required('Net salary is required'),
             salaryDate: Yup.string().required('Salary date is required'),
             file: Yup
-                .mixed()
+                .mixed().nullable().notRequired()
                 .test(
                     'fileSize',
                     'File size is too large. Maximum size is 5MB.',

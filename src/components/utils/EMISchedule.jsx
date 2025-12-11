@@ -1,7 +1,7 @@
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { useEffect, useState } from "react";
-import { GetEMISchedule, PullNACHPayment, WavedOffAmount, UpdateMenualEMIPayment, UpdateLeadDisbursement, GetLoanDocuments, funderOption } from "../../api/ApiFunction";
+import { GetEMISchedule, PullNACHPayment, WavedOffAmount, UpdateMenualEMIPayment, UpdateLeadDisbursement, GetLoanDocuments, funderOption, GetUpdateLoanEMI } from "../../api/ApiFunction";
 import Button from "./Button";
 import Modal from "./Modal";
 import dayjs from "dayjs";
@@ -41,6 +41,7 @@ function EMISchedule({ data, loan_Id }) {
 
     const [funderOptions, setFunderOptions] = useState([]);
     const [fundStatus, setFundStatus] = useState({});
+    const [updateEMI, setUpdateEMI] = useState([]);
 
     const navigate = useNavigate();
     const { adminUser } = useAuth();
@@ -50,7 +51,7 @@ function EMISchedule({ data, loan_Id }) {
     const activeLoan = schedule?.activeLoanDetails;
     const { compayBankAcount } = useGetData();
 
-    
+
     const pageAccess = LoginPageFinder('page_display_name', 'accounts');
     const permission = pageAccess?.[0]?.read_write_permission;
     const funder = adminUser?.role === 'Funder' ? true : false
@@ -61,7 +62,10 @@ function EMISchedule({ data, loan_Id }) {
     const today = dayjs().startOf('day');
     const threeDaysAgo = today.subtract(3, 'day');
 
-    const totalOutstanding = activeLoan?.due_amount_on_current_day;
+    // const totalOutstanding = activeLoan?.due_amount_on_current_day;
+    const [totalOutstanding, setTotalOutstanding] = useState(
+  activeLoan?.due_amount_on_current_day || 0
+);
 
     const loanDetails = [
         { label: "Loan Amount", value: `₹${activeLoan?.loan_amount}`, className: "text-gray-500" },
@@ -228,6 +232,7 @@ function EMISchedule({ data, loan_Id }) {
     });
 
     const UpdatePayment = useFormik({
+        
         initialValues: {
             collectionMode: "",
             collectedAmount: "",
@@ -239,6 +244,7 @@ function EMISchedule({ data, loan_Id }) {
             bank: "",
             waiveOff: "0", // Default to 0 to avoid NaN issues
         },
+        
         validationSchema: Yup.object({
             collectionMode: Yup.string().required("Collection Mode is required"),
             collectedAmount: Yup.number()
@@ -247,6 +253,7 @@ function EMISchedule({ data, loan_Id }) {
                     'close-loan-validation',
                     'Does not match total outstanding amount',
                     function (value) {
+                        console.log("total---------",totalOutstanding);
                         const { status } = this.parent;
 
                         // Check if status is 10 or 11 and collected amount doesn't match total outstanding
@@ -532,11 +539,42 @@ function EMISchedule({ data, loan_Id }) {
         }
     };
 
+    const updateEmi = async (e) => {
+        const dateID=e.target.value;
+        
+        const req = {
+            lead_id: leadId,
+            // user_id: userId,
+            // doc_type: "disbursal_letter",
+            loan_id: loanId,
+            collection_date: dateID
+        };
 
+        try {
+            // setIsLoading(true);
+            const response = await GetUpdateLoanEMI(req);
+
+            if (response.status) {
+                // Open in new tab
+               setUpdateEMI(response.activeLoanDetails);
+            //    totalOutstanding=response.activeLoanDetails.due_amount_on_current_day;
+            setTotalOutstanding(response.activeLoanDetails.due_amount_on_current_day);
+            } else {
+                setUpdateEMI();
+                toast.error(response.message);
+            }
+        } catch (error) {
+            console.error("Error fetching data:", error);
+            toast.error("An error occurred while fetching data.");
+        } finally {
+            // setIsLoading(false);
+        }
+    }
     if (isLoading) {
         return <Loader msg="Initializing do not refresh ..." />;
     }
 
+    
     return (
         <>
             <div>
@@ -670,21 +708,41 @@ function EMISchedule({ data, loan_Id }) {
                     <div className="flex justify-evenly items-center gap-2 border border-primary py-2 rounded shadow-sm">
                         <div className="flex flex-col justify-center items-center">
                             <p className="text-sm font-semibold italic text-primary">Current Outstanding </p>
-                            <p className="text-lg text-gray-800 font-bold">₹{activeLoan?.due_amount_on_current_day}</p>
+                            <p className="text-lg text-gray-800 font-bold">₹{updateEMI.due_amount_on_current_day && updateEMI.due_amount_on_current_day?updateEMI.due_amount_on_current_day: activeLoan?.due_amount_on_current_day}</p>
                         </div>
 
                         <div className="flex flex-col justify-center items-center">
                             <p className="text-sm font-semibold italic text-primary">Current Interest</p>
-                            <p className="text-lg text-gray-800 font-bold">₹{activeLoan?.due_interest_on_current_day}</p>
+                            <p className="text-lg text-gray-800 font-bold">₹{updateEMI.due_interest_on_current_day && updateEMI.due_interest_on_current_day?updateEMI.due_interest_on_current_day:activeLoan?.due_interest_on_current_day}</p>
                         </div>
 
                         <div className="flex flex-col justify-center items-center">
                             <p className="text-sm font-semibold italic text-primary">Penal Charges</p>
-                            <p className="text-lg text-gray-800 font-bold">₹{activeLoan?.penal_charges}</p>
+                            <p className="text-lg text-gray-800 font-bold">₹{updateEMI.penal_charges && updateEMI.penal_charges?updateEMI.penal_charges:activeLoan?.penal_charges}</p>
                         </div>
                     </div>
                     <form onSubmit={UpdatePayment.handleSubmit} className='my-2'>
                         <div className="grid grid-cols-2 gap-3">
+                            <div className="col-span-1">
+                                <DateInput
+                                    label="Collection Date"
+                                    icon="IoCalendarOutline"
+                                    placeholder="DD-MM-YYYY"
+                                    name="collectionDate"
+                                    id="collectionDate"
+                                    // onChange={UpdatePayment.handleChange}
+                                    onChange={(e) => {
+                                        UpdatePayment.handleChange(e); // Formik function
+                                        updateEmi(e);               // Your custom function
+                                    }}
+                                    onBlur={UpdatePayment.handleBlur}
+                                    value={UpdatePayment.values.collectionDate}
+
+                                />
+                                {UpdatePayment.touched.collectionDate && UpdatePayment.errors.collectionDate && (
+                                    <ErrorMsg error={UpdatePayment.errors.collectionDate} />
+                                )}
+                            </div>
                             <div className="col-span-1">
                                 <SelectInput
                                     label="Payment Status"
@@ -771,22 +829,7 @@ function EMISchedule({ data, loan_Id }) {
                                     <ErrorMsg error={UpdatePayment.errors.transactionId} />
                                 )}
                             </div>
-                            <div className="col-span-1">
-                                <DateInput
-                                    label="Collection Date"
-                                    icon="IoCalendarOutline"
-                                    placeholder="DD-MM-YYYY"
-                                    name="collectionDate"
-                                    id="collectionDate"
-                                    onChange={UpdatePayment.handleChange}
-                                    onBlur={UpdatePayment.handleBlur}
-                                    value={UpdatePayment.values.collectionDate}
 
-                                />
-                                {UpdatePayment.touched.collectionDate && UpdatePayment.errors.collectionDate && (
-                                    <ErrorMsg error={UpdatePayment.errors.collectionDate} />
-                                )}
-                            </div>
 
                             <div className="col-span-1">
                                 <UploadInput

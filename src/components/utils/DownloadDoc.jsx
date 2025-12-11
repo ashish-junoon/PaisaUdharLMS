@@ -1,5 +1,6 @@
 import React from "react";
 import { saveAs } from "file-saver";
+import { Link } from "react-router-dom";
 
 const DownloadDoc = ({ fileUrl, fileType, fileName, btnName, label, disabled = false }) => {
     const handleDownload = async (e) => {
@@ -28,14 +29,23 @@ const DownloadDoc = ({ fileUrl, fileType, fileName, btnName, label, disabled = f
         <>
             <span className="block mb-1 text-sm font-medium text-black">{label}</span>
             <div className="flex justify-center items-center">
-                <button
+                <a
+                    href={fileUrl}
+                    target="_blank"
+                    download
+                    className="text-xs font-bold border border-black text-black py-1.5 px-4 w-full rounded"
+                >
+                    {btnName}
+                </a>
+
+                {/* <button
                     type="button"
                     onClick={handleDownload}
                     disabled={disabled}
                     className="text-xs font-bold border border-black text-black py-1.5 px-4 w-full rounded"
                 >
                     {btnName}
-                </button>
+                </button> */}
             </div>
         </>
     );
